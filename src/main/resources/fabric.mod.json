@@ -1,18 +1,18 @@
 {
 	"schemaVersion": 1,
-	"id": "modid",
+	"id": "bluewire",
 	"version": "${version}",
-	"name": "Example mod",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"name": "Blue Redstone wire mod",
+	"description": "This mod can turn your redstone dust to blue!",
 	"authors": [
-		"Me!"
+		"WalkerTian"
 	],
 	"contact": {
 		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"sources": "https://github.com/Walkersifolia/Bluewire"
 	},
 	"license": "CC0-1.0",
-	"icon": "assets/modid/icon.png",
+	"icon": "assets/bluewire/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
@@ -23,9 +23,9 @@
 		]
 	},
 	"mixins": [
-		"modid.mixins.json",
+		"bluewire.mixins.json",
 		{
-			"config": "modid.client.mixins.json",
+			"config": "bluewire.client.mixins.json",
 			"environment": "client"
 		}
 	],
