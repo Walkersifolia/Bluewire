@@ -13,10 +13,10 @@ public class ExampleMixin {
     static {
         for (int i = 0; i <= 15; ++i) {
             float f = (float) i / 15.0F;
-            float g = f * 0.6F + (f > 0.0F ? 0.4F : 0.3F);
-            float h = MathHelper.clamp(f * f * 0.7F - 0.5F, 0.0F, 1.0F);
-            float j = MathHelper.clamp(f * f * 0.6F - 0.7F, 0.0F, 1.0F);
-            COLORS[i] = new Vec3d((double) j, (double) h, (double) g);
+            float r = MathHelper.clamp(f * f * 0.5F - 0.7F, 0.0F, 1.0F);
+            float g = MathHelper.clamp(f * f * 0.8F - 0.3F, 0.0F, 1.0F);
+            float b = f * 0.6F + (f > 0.0F ? 0.4F : 0.3F);
+            COLORS[i] = new Vec3d((double) r, (double) g, (double) b);
         }
     }
 
