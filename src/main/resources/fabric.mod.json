@@ -1,14 +1,14 @@
 {
 	"schemaVersion": 1,
 	"id": "bluewire",
-	"version": "${version}",
+	"version": "1.0.1",
 	"name": "Blue Redstone wire mod",
 	"description": "This mod can turn your redstone dust to blue!",
 	"authors": [
 		"WalkerTian"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
+		"homepage": "https://github.com/Walkersifolia/",
 		"sources": "https://github.com/Walkersifolia/Bluewire"
 	},
 	"license": "CC0-1.0",
@@ -30,9 +30,9 @@
 		}
 	],
 	"depends": {
-		"fabricloader": ">=0.14.21",
-		"minecraft": "~1.20.1",
-		"java": ">=17",
+		"fabricloader": "*",
+		"minecraft": "*",
+		"java": "*",
 		"fabric-api": "*"
 	},
 	"suggests": {
