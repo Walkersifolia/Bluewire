@@ -23,6 +23,7 @@ import org.joml.Matrix4f;
 public class RainbowOverlayRenderer {
     private static final LongSet wirePositions = new LongOpenHashSet();
     private static boolean registered;
+    private static int debugFrame;
 
     public static void register() {
         if (registered) return;
@@ -87,6 +88,19 @@ public class RainbowOverlayRenderer {
             BufferRenderer.drawWithGlobalProgram(buffer.end());
             RenderSystem.depthMask(true);
             RenderSystem.enableDepthTest();
+
+            // 每秒打印一次当前颜色用于调试
+            debugFrame++;
+            if (debugFrame % 60 == 0 && !wirePositions.isEmpty()) {
+                long first = wirePositions.iterator().nextLong();
+                int bx = BlockPos.unpackLongX(first), bz = BlockPos.unpackLongZ(first);
+                BlockState st = client.world.getBlockState(new BlockPos(bx, 0, bz));
+                if (st.isOf(Blocks.REDSTONE_WIRE)) {
+                    int pw = st.get(net.minecraft.block.RedstoneWireBlock.POWER);
+                    int c = BluewireConfig.getWireColor(pw);
+                    com.example.ExampleMod.LOGGER.info("[ARGB] power={} color=#{}", pw, Integer.toHexString(c));
+                }
+            }
         });
     }
 

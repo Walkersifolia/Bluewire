@@ -47,7 +47,7 @@ public class BluewireConfig {
         BluewireConfig config = getInstance();
         if (config.rainbow) {
             float speed = config.rainbowSpeed <= 0 ? 1.0F : config.rainbowSpeed;
-            float hue = (System.currentTimeMillis() / 1000.0F * speed * 60.0F) % 360.0F;
+            float hue = (System.currentTimeMillis() / 1000.0F * speed * 360.0F) % 360.0F;
             hue = (hue + powerLevel * 12.0F) % 360.0F;
             return hsvToRgb(hue, 1.0F, 1.0F);
         }
