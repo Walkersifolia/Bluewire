@@ -16,6 +16,7 @@ import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.chunk.WorldChunk;
 import org.joml.Matrix4f;
+import org.lwjgl.opengl.GL11;
 
 /**
  * 在红石线上绘制动态颜色覆盖层。
@@ -63,6 +64,7 @@ public class RainbowOverlayRenderer {
 
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();
+            RenderSystem.depthFunc(GL11.GL_LEQUAL);
             RenderSystem.setShader(GameRenderer::getPositionColorProgram);
             RenderSystem.depthMask(false);
 
@@ -87,7 +89,7 @@ public class RainbowOverlayRenderer {
                 float b = (color & 0xFF) / 255f;
 
                 float x = (float)(bx - camPos.x);
-                float y = (float)(by + 0.02 - camPos.y);
+                float y = (float)(by + 0.08 - camPos.y);
                 float z = (float)(bz - camPos.z);
 
                 matrices.push();
