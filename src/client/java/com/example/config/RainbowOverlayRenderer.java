@@ -4,6 +4,8 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientChunkEvents;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -23,6 +25,7 @@ import org.joml.Matrix4f;
 public class RainbowOverlayRenderer {
     private static final LongSet wirePositions = new LongOpenHashSet();
     private static boolean registered;
+    private static boolean scanned = false;
     private static int debugFrame;
 
     public static void register() {
@@ -36,6 +39,23 @@ public class RainbowOverlayRenderer {
         // 区块卸载 → 移除位置
         ClientChunkEvents.CHUNK_UNLOAD.register((world, chunk) ->
             scanChunk(chunk, false));
+
+        // 进入世界时扫描所有已加载区块（区块加载事件不会触发已有区块）
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+            scanned = false;
+        });
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (scanned || client.world == null || client.player == null) return;
+            scanned = true;
+            wirePositions.clear();
+            int r = client.options.getViewDistance().getValue();
+            var cp = client.player.getChunkPos();
+            for (int cx = cp.x - r; cx <= cp.x + r; cx++)
+                for (int cz = cp.z - r; cz <= cp.z + r; cz++) {
+                    var c = client.world.getChunkManager().getWorldChunk(cx, cz);
+                    if (c != null) scanChunk(c, true);
+                }
+        });
 
         // 每帧渲染：不透明覆盖层，直接盖住原版颜色
         WorldRenderEvents.LAST.register(context -> {
