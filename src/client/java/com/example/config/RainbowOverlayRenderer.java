@@ -96,10 +96,11 @@ public class RainbowOverlayRenderer {
                 matrices.translate(x, y, z);
                 Matrix4f mat = matrices.peek().getPositionMatrix();
 
-                vc.vertex(mat, 0, 0, 0).color(r, g, b, 0.55f).next();
-                vc.vertex(mat, 1, 0, 0).color(r, g, b, 0.55f).next();
-                vc.vertex(mat, 1, 0, 1).color(r, g, b, 0.55f).next();
-                vc.vertex(mat, 0, 0, 1).color(r, g, b, 0.55f).next();
+                org.joml.Matrix3f normalMat = matrices.peek().getNormalMatrix();
+                vc.vertex(mat, 0, 0, 0).color(r, g, b, 0.55f).texture(0, 0).overlay(0).light(15728880).normal(normalMat, 0, 1, 0).next();
+                vc.vertex(mat, 1, 0, 0).color(r, g, b, 0.55f).texture(0, 1).overlay(0).light(15728880).normal(normalMat, 0, 1, 0).next();
+                vc.vertex(mat, 1, 0, 1).color(r, g, b, 0.55f).texture(1, 1).overlay(0).light(15728880).normal(normalMat, 0, 1, 0).next();
+                vc.vertex(mat, 0, 0, 1).color(r, g, b, 0.55f).texture(1, 0).overlay(0).light(15728880).normal(normalMat, 0, 1, 0).next();
 
                 matrices.pop();
             }
