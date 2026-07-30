@@ -1,6 +1,5 @@
 package com.example.config;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientChunkEvents;
@@ -19,31 +18,30 @@ import net.minecraft.world.chunk.WorldChunk;
 import org.joml.Matrix4f;
 
 /**
- * 在红石线上绘制完全不透明的动态颜色覆盖层，
- * 通过区块加载事件维护位置缓存，无定期全量扫描（无卡顿）。
+ * ARGB 炫彩动态覆盖渲染器。
+ * 使用 VertexConsumerProvider + RenderLayer（Sodium 兼容）替代裸 Tessellator，
+ * 每帧重建顶点缓冲区以实现颜色随时间持续流动。
+ *
+ * 调用链：
+ *   ExampleModClient → register()
+ *     ├─ ClientChunkEvents → 维护 wirePositions 缓存
+ *     ├─ ClientTickEvents → 世界初始化时全量扫描
+ *     └─ WorldRenderEvents.LAST → 每帧用动态颜色绘制半透明覆盖层
  */
 public class RainbowOverlayRenderer {
     private static final LongSet wirePositions = new LongOpenHashSet();
     private static boolean registered;
-    private static boolean scanned = false;
-    private static int debugFrame;
+    private static boolean scanned;
 
     public static void register() {
         if (registered) return;
         registered = true;
 
-        // 区块加载 → 扫描红石线位置
-        ClientChunkEvents.CHUNK_LOAD.register((world, chunk) ->
-            scanChunk(chunk, true));
+        ClientChunkEvents.CHUNK_LOAD.register((world, chunk)   -> scanChunk(chunk, true));
+        ClientChunkEvents.CHUNK_UNLOAD.register((world, chunk) -> scanChunk(chunk, false));
 
-        // 区块卸载 → 移除位置
-        ClientChunkEvents.CHUNK_UNLOAD.register((world, chunk) ->
-            scanChunk(chunk, false));
-
-        // 进入世界时扫描所有已加载区块（区块加载事件不会触发已有区块）
-        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
-            scanned = false;
-        });
+        // 进世界时重置并全量扫描
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> scanned = false);
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (scanned || client.world == null || client.player == null) return;
             scanned = true;
@@ -57,22 +55,21 @@ public class RainbowOverlayRenderer {
                 }
         });
 
-        // 每帧渲染：不透明覆盖层，直接盖住原版颜色
+        // 每帧渲染
         WorldRenderEvents.LAST.register(context -> {
             if (!BluewireConfig.getInstance().rainbow) return;
             MinecraftClient client = MinecraftClient.getInstance();
             if (client.world == null || client.player == null) return;
+            if (wirePositions.isEmpty()) return;
 
             Vec3d camPos = context.camera().getPos();
             MatrixStack matrices = context.matrixStack();
             int viewDist = client.options.getViewDistance().getValue() * 16;
 
-            RenderSystem.disableDepthTest();
-            RenderSystem.depthMask(false);
-            RenderSystem.setShader(GameRenderer::getPositionColorProgram);
-
-            BufferBuilder buffer = Tessellator.getInstance().getBuffer();
-            buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+            // 使用 VertexConsumerProvider（Sodium 兼容方式）
+            VertexConsumerProvider.Immediate provider =
+                VertexConsumerProvider.immediate(new BufferBuilder(131072));
+            VertexConsumer vc = provider.getBuffer(RenderLayer.getTranslucent());
 
             for (long packed : wirePositions) {
                 int bx = BlockPos.unpackLongX(packed);
@@ -92,35 +89,22 @@ public class RainbowOverlayRenderer {
                 float b = ( color        & 0xFF) / 255f;
 
                 float x = (float)(bx - camPos.x);
-                float y = (float)(by + 0.02 - camPos.y);
+                float y = (float)(by + 0.022f - camPos.y);
                 float z = (float)(bz - camPos.z);
 
                 matrices.push();
                 matrices.translate(x, y, z);
                 Matrix4f mat = matrices.peek().getPositionMatrix();
-                buffer.vertex(mat, 0, 0, 0).color(r, g, b, 1f).next();
-                buffer.vertex(mat, 1, 0, 0).color(r, g, b, 1f).next();
-                buffer.vertex(mat, 1, 0, 1).color(r, g, b, 1f).next();
-                buffer.vertex(mat, 0, 0, 1).color(r, g, b, 1f).next();
+
+                vc.vertex(mat, 0, 0, 0).color(r, g, b, 0.55f).next();
+                vc.vertex(mat, 1, 0, 0).color(r, g, b, 0.55f).next();
+                vc.vertex(mat, 1, 0, 1).color(r, g, b, 0.55f).next();
+                vc.vertex(mat, 0, 0, 1).color(r, g, b, 0.55f).next();
+
                 matrices.pop();
             }
 
-            BufferRenderer.drawWithGlobalProgram(buffer.end());
-            RenderSystem.depthMask(true);
-            RenderSystem.enableDepthTest();
-
-            // 每秒打印一次当前颜色用于调试
-            debugFrame++;
-            if (debugFrame % 60 == 0 && !wirePositions.isEmpty()) {
-                long first = wirePositions.iterator().nextLong();
-                int bx = BlockPos.unpackLongX(first), bz = BlockPos.unpackLongZ(first);
-                BlockState st = client.world.getBlockState(new BlockPos(bx, 0, bz));
-                if (st.isOf(Blocks.REDSTONE_WIRE)) {
-                    int pw = st.get(net.minecraft.block.RedstoneWireBlock.POWER);
-                    int c = BluewireConfig.getWireColor(pw);
-                    com.example.ExampleMod.LOGGER.info("[ARGB] power={} color=#{}", pw, Integer.toHexString(c));
-                }
-            }
+            provider.draw();
         });
     }
 
@@ -134,7 +118,7 @@ public class RainbowOverlayRenderer {
                     BlockPos pos = new BlockPos((cp.x << 4) + bx, by, (cp.z << 4) + bz);
                     if (chunk.getBlockState(pos).isOf(Blocks.REDSTONE_WIRE)) {
                         if (add) wirePositions.add(pos.asLong());
-                        else wirePositions.remove(pos.asLong());
+                        else     wirePositions.remove(pos.asLong());
                     }
                 }
     }
