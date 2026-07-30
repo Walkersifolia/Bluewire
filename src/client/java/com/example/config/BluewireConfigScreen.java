@@ -3,12 +3,13 @@ package com.example.config;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
 
 /**
- * Client-only GUI builder.  Separated from BluewireConfig because
- * splitEnvironmentSourceSets() keeps client classes out of the main source set.
+ * 客户端 GUI 构建器。由于 splitEnvironmentSourceSets() 会阻止客户端类出现在 main 源集中，
+ * 因此与 BluewireConfig 分开放置。
  */
 public final class BluewireConfigScreen {
 
@@ -19,24 +20,29 @@ public final class BluewireConfigScreen {
 
         ConfigBuilder builder = ConfigBuilder.create()
             .setParentScreen(parent)
-            .setTitle(Text.literal("Bluewire Settings"))
+            .setTitle(Text.literal("Bluewire 设置"))
             .setSavingRunnable(() -> {
                 cfg.save();
                 BluewireConfig.updateColors();
+                // 立即刷新世界渲染，使颜色变更无需退出存档即可看到效果
+                MinecraftClient client = MinecraftClient.getInstance();
+                if (client.worldRenderer != null) {
+                    client.worldRenderer.reload();
+                }
             });
 
-        ConfigCategory category = builder.getOrCreateCategory(Text.literal("Wire Colour"));
+        ConfigCategory category = builder.getOrCreateCategory(Text.literal("红石线颜色"));
         ConfigEntryBuilder eb = builder.entryBuilder();
 
         int defaultHigh = BluewireConfig.floatRgbToInt(0.0F, 0.5F, 1.0F);
         int defaultLow  = BluewireConfig.floatRgbToInt(0.0F, 0.0F, 0.3F);
 
         category.addEntry(eb.startColorField(
-                Text.literal("High Power Colour"),
+                Text.literal("高功率颜色"),
                 BluewireConfig.floatRgbToInt(cfg.highRed, cfg.highGreen, cfg.highBlue)
             )
             .setDefaultValue(defaultHigh)
-            .setTooltip(Text.literal("Colour of the wire at redstone power level 15"))
+            .setTooltip(Text.literal("红石信号强度为 15 时的线缆颜色"))
             .setSaveConsumer(value -> {
                 float[] rgb = BluewireConfig.intToFloatRgb(value);
                 cfg.highRed   = rgb[0];
@@ -47,11 +53,11 @@ public final class BluewireConfigScreen {
         );
 
         category.addEntry(eb.startColorField(
-                Text.literal("Low Power Colour"),
+                Text.literal("低功率颜色"),
                 BluewireConfig.floatRgbToInt(cfg.lowRed, cfg.lowGreen, cfg.lowBlue)
             )
             .setDefaultValue(defaultLow)
-            .setTooltip(Text.literal("Colour of the wire at redstone power level 0"))
+            .setTooltip(Text.literal("红石信号强度为 0 时的线缆颜色"))
             .setSaveConsumer(value -> {
                 float[] rgb = BluewireConfig.intToFloatRgb(value);
                 cfg.lowRed   = rgb[0];
@@ -62,11 +68,11 @@ public final class BluewireConfigScreen {
         );
 
         category.addEntry(eb.startBooleanToggle(
-                Text.literal("Reverse Direction"),
+                Text.literal("反转方向"),
                 cfg.reverse
             )
             .setDefaultValue(false)
-            .setTooltip(Text.literal("When enabled, the brightest colour appears at power 0 instead of power 15"))
+            .setTooltip(Text.literal("开启后，最亮的颜色出现在功率 0 而非功率 15"))
             .setSaveConsumer(value -> cfg.reverse = value)
             .build()
         );

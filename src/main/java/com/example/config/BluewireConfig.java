@@ -19,9 +19,9 @@ public class BluewireConfig {
 
     private static BluewireConfig instance;
 
-    // Default colour values — current blue parameters:
-    // At power 15: R=0.0, G=0.5, B=1.0
-    // At power  0: R=0.0, G=0.0, B=0.3
+    // 默认颜色值 — 当前蓝色配色参数：
+    // 功率 15 时: R=0.0, G=0.5, B=1.0
+    // 功率  0 时: R=0.0, G=0.0, B=0.3
     public float highRed   = 0.0F;
     public float highGreen = 0.5F;
     public float highBlue  = 1.0F;
@@ -29,10 +29,10 @@ public class BluewireConfig {
     public float lowGreen  = 0.0F;
     public float lowBlue   = 0.3F;
 
-    /** When true the brightest colour appears at power 0 instead of power 15. */
+    /** 开启后最亮颜色出现在功率 0 而非功率 15 */
     public boolean reverse = false;
 
-    // ---- colour cache ----
+    // ---- 颜色缓存 ----
 
     private static final Vec3d[] COLORS = new Vec3d[16];
 
@@ -41,15 +41,15 @@ public class BluewireConfig {
     }
 
     /**
-     * Rebuild the cached colour table from the current config values.
-     * Called on mod init and every time the user saves the config GUI.
+     * 根据当前配置重建缓存的颜色表。
+     * 模组初始化时调用，配置页面保存时也会调用。
      */
     public static void updateColors() {
         BluewireConfig config = getInstance();
         for (int i = 0; i <= 15; ++i) {
             float f = (float) i / 15.0F;
 
-            // When reversed, power 0 is brightest and power 15 is darkest.
+            // 反转模式：功率 0 最亮，功率 15 最暗
             if (config.reverse) f = 1.0F - f;
 
             float r = MathHelper.clamp(
@@ -69,7 +69,7 @@ public class BluewireConfig {
             (float) vec3d.getX(), (float) vec3d.getY(), (float) vec3d.getZ());
     }
 
-    // ---- singleton ----
+    // ---- 单例 ----
 
     public static BluewireConfig getInstance() {
         if (instance == null) {
@@ -82,15 +82,15 @@ public class BluewireConfig {
         if (CONFIG_FILE.exists()) {
             try (Reader reader = new FileReader(CONFIG_FILE)) {
                 instance = GSON.fromJson(reader, BluewireConfig.class);
-                LOGGER.info("Config loaded from {}", CONFIG_FILE.getAbsolutePath());
+                LOGGER.info("已从 {} 加载配置", CONFIG_FILE.getAbsolutePath());
             } catch (Exception e) {
-                LOGGER.error("Failed to load config, using defaults", e);
+                LOGGER.error("配置加载失败，使用默认值", e);
                 instance = new BluewireConfig();
             }
         } else {
             instance = new BluewireConfig();
             instance.save();
-            LOGGER.info("Default config saved to {}", CONFIG_FILE.getAbsolutePath());
+            LOGGER.info("默认配置已保存至 {}", CONFIG_FILE.getAbsolutePath());
         }
     }
 
@@ -98,11 +98,11 @@ public class BluewireConfig {
         try (Writer writer = new FileWriter(CONFIG_FILE)) {
             GSON.toJson(this, writer);
         } catch (Exception e) {
-            LOGGER.error("Failed to save config", e);
+            LOGGER.error("配置保存失败", e);
         }
     }
 
-    // ---- utility (used by the client-side config screen) ----
+    // ---- 工具方法（供客户端配置页面使用） ----
 
     public static int floatRgbToInt(float r, float g, float b) {
         int ir = MathHelper.clamp((int) (r * 255.0F + 0.5F), 0, 255);
