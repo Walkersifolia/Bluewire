@@ -1,6 +1,5 @@
 package com.example.config;
 
-import com.example.mixin.ExampleMixin;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
@@ -23,7 +22,7 @@ public final class BluewireConfigScreen {
             .setTitle(Text.literal("Bluewire Settings"))
             .setSavingRunnable(() -> {
                 cfg.save();
-                ExampleMixin.updateColors();
+                BluewireConfig.updateColors();
             });
 
         ConfigCategory category = builder.getOrCreateCategory(Text.literal("Wire Colour"));
