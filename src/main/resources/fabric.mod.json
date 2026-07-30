@@ -20,6 +20,9 @@
 		],
 		"client": [
 			"com.example.ExampleModClient"
+		],
+		"modmenu": [
+			"com.example.config.ModMenuIntegration"
 		]
 	},
 	"mixins": [
