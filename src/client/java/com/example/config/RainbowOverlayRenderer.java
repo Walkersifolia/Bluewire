@@ -4,6 +4,8 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientChunkEvents;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -19,6 +21,7 @@ import org.joml.Matrix4f;
 public class RainbowOverlayRenderer {
     private static final LongSet wirePositions = new LongOpenHashSet();
     private static boolean registered;
+    private static boolean scanned;
     private static int debugFrame;
 
     public static void register() {
@@ -27,6 +30,20 @@ public class RainbowOverlayRenderer {
 
         ClientChunkEvents.CHUNK_LOAD.register((world, chunk) -> scanChunk(chunk, true));
         ClientChunkEvents.CHUNK_UNLOAD.register((world, chunk) -> scanChunk(chunk, false));
+
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> scanned = false);
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (scanned || client.world == null || client.player == null) return;
+            scanned = true;
+            wirePositions.clear();
+            int r = client.options.getViewDistance().getValue();
+            var cp = client.player.getChunkPos();
+            for (int cx = cp.x - r; cx <= cp.x + r; cx++)
+                for (int cz = cp.z - r; cz <= cp.z + r; cz++) {
+                    var c = client.world.getChunkManager().getWorldChunk(cx, cz);
+                    if (c != null) scanChunk(c, true);
+                }
+        });
 
         WorldRenderEvents.LAST.register(context -> {
             if (!BluewireConfig.getInstance().rainbow) return;
@@ -81,12 +98,14 @@ public class RainbowOverlayRenderer {
             debugFrame++;
             if (debugFrame % 60 == 0 && !wirePositions.isEmpty()) {
                 long first = wirePositions.iterator().nextLong();
-                int bx = BlockPos.unpackLongX(first), by = BlockPos.unpackLongY(first), bz = BlockPos.unpackLongZ(first);
+                int bx = BlockPos.unpackLongX(first);
+                int by = BlockPos.unpackLongY(first);
+                int bz = BlockPos.unpackLongZ(first);
                 BlockState st = client.world.getBlockState(new BlockPos(bx, by, bz));
                 if (st.isOf(Blocks.REDSTONE_WIRE)) {
                     int pw = st.get(net.minecraft.block.RedstoneWireBlock.POWER);
                     int c = BluewireConfig.getWireColor(pw);
-                    com.example.ExampleMod.LOGGER.info("[ARGB] power={} color=#{}", pw, Integer.toHexString(c));
+                    com.example.ExampleMod.LOGGER.info("[ARGB] power={} color=#{} wireCount={}", pw, Integer.toHexString(c), wirePositions.size());
                 }
             }
         });
