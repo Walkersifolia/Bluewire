@@ -26,6 +26,9 @@ public class BluewireConfig {
     public float lowBlue   = 0.3F;
     public boolean reverse = false;
 
+    public boolean rainbow = false;
+    public float rainbowSpeed = 1.0F;
+
     private static final Vec3d[] COLORS = new Vec3d[16];
     static { updateColors(); }
 
@@ -41,8 +44,30 @@ public class BluewireConfig {
     }
 
     public static int getWireColor(int powerLevel) {
+        BluewireConfig config = getInstance();
+        if (config.rainbow) {
+            float speed = config.rainbowSpeed <= 0 ? 1.0F : config.rainbowSpeed;
+            float hue = (System.currentTimeMillis() / 1000.0F * speed * 60.0F) % 360.0F;
+            hue = (hue + powerLevel * 12.0F) % 360.0F;
+            return hsvToRgb(hue, 1.0F, 1.0F);
+        }
         Vec3d v = COLORS[powerLevel];
         return MathHelper.packRgb((float)v.getX(), (float)v.getY(), (float)v.getZ());
+    }
+
+    private static int hsvToRgb(float h, float s, float v) {
+        float c = v * s;
+        float hp = h / 60.0F;
+        float x = c * (1.0F - Math.abs(hp % 2.0F - 1.0F));
+        float m = v - c;
+        float r, g, b;
+        if      (hp < 1) { r = c; g = x; b = 0; }
+        else if (hp < 2) { r = x; g = c; b = 0; }
+        else if (hp < 3) { r = 0; g = c; b = x; }
+        else if (hp < 4) { r = 0; g = x; b = c; }
+        else if (hp < 5) { r = x; g = 0; b = c; }
+        else             { r = c; g = 0; b = x; }
+        return MathHelper.packRgb(r + m, g + m, b + m);
     }
 
     public static BluewireConfig getInstance() {
@@ -62,6 +87,7 @@ public class BluewireConfig {
             instance = new BluewireConfig();
             instance.save();
         }
+        if (instance.rainbowSpeed <= 0) instance.rainbowSpeed = 1.0F;
     }
 
     public void save() {

@@ -22,25 +22,36 @@ public final class BluewireConfigScreen {
                 if (client.worldRenderer != null) client.worldRenderer.reload();
             });
 
-        ConfigCategory cat = builder.getOrCreateCategory(Text.literal("红石线颜色"));
         ConfigEntryBuilder eb = builder.entryBuilder();
 
-        cat.addEntry(eb.startColorField(Text.literal("高功率颜色"), BluewireConfig.floatRgbToInt(cfg.highRed, cfg.highGreen, cfg.highBlue))
+        ConfigCategory catStatic = builder.getOrCreateCategory(Text.literal("静态颜色"));
+        catStatic.addEntry(eb.startColorField(Text.literal("高功率颜色"), BluewireConfig.floatRgbToInt(cfg.highRed, cfg.highGreen, cfg.highBlue))
             .setDefaultValue(BluewireConfig.floatRgbToInt(0,0.5f,1))
             .setTooltip(Text.literal("红石信号强度为 15 时的线缆颜色"))
             .setSaveConsumer(v -> { float[] rgb = BluewireConfig.intToFloatRgb(v); cfg.highRed=rgb[0]; cfg.highGreen=rgb[1]; cfg.highBlue=rgb[2]; })
             .build());
-
-        cat.addEntry(eb.startColorField(Text.literal("低功率颜色"), BluewireConfig.floatRgbToInt(cfg.lowRed, cfg.lowGreen, cfg.lowBlue))
+        catStatic.addEntry(eb.startColorField(Text.literal("低功率颜色"), BluewireConfig.floatRgbToInt(cfg.lowRed, cfg.lowGreen, cfg.lowBlue))
             .setDefaultValue(BluewireConfig.floatRgbToInt(0,0,0.3f))
             .setTooltip(Text.literal("红石信号强度为 0 时的线缆颜色"))
             .setSaveConsumer(v -> { float[] rgb = BluewireConfig.intToFloatRgb(v); cfg.lowRed=rgb[0]; cfg.lowGreen=rgb[1]; cfg.lowBlue=rgb[2]; })
             .build());
-
-        cat.addEntry(eb.startBooleanToggle(Text.literal("反转方向"), cfg.reverse)
+        catStatic.addEntry(eb.startBooleanToggle(Text.literal("反转方向"), cfg.reverse)
             .setDefaultValue(false)
             .setTooltip(Text.literal("开启后，最亮的颜色出现在功率 0 而非功率 15"))
             .setSaveConsumer(v -> cfg.reverse = v)
+            .build());
+
+        ConfigCategory catRainbow = builder.getOrCreateCategory(Text.literal("ARGB 渐变"));
+        catRainbow.addEntry(eb.startBooleanToggle(Text.literal("启用自动渐变"), cfg.rainbow)
+            .setDefaultValue(false)
+            .setTooltip(Text.literal("开启后红石线颜色会自动循环渐变，类似电脑 ARGB 灯效。\n关闭后使用上方静态颜色设置。"))
+            .setSaveConsumer(v -> cfg.rainbow = v)
+            .build());
+        catRainbow.addEntry(eb.startFloatField(Text.literal("渐变速度"), cfg.rainbowSpeed)
+            .setDefaultValue(1.0F)
+            .setMin(0.1F).setMax(5.0F)
+            .setTooltip(Text.literal("控制颜色渐变快慢：1.0=默认，数值越大越快"))
+            .setSaveConsumer(v -> cfg.rainbowSpeed = v)
             .build());
 
         return builder.build();
