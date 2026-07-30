@@ -26,11 +26,7 @@
 		]
 	},
 	"mixins": [
-		"bluewire.mixins.json",
-		{
-			"config": "bluewire.client.mixins.json",
-			"environment": "client"
-		}
+		"bluewire.mixins.json"
 	],
 	"depends": {
 		"fabricloader": "*",
