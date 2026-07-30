@@ -10,10 +10,8 @@ public class ExampleMod implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        // 加载持久化配置（首次运行则创建默认配置），然后用加载的值重建颜色表
         BluewireConfig.load();
         BluewireConfig.updateColors();
-
         LOGGER.info("Bluewire 模组已初始化 — 红石线颜色可自由配置！");
     }
 }

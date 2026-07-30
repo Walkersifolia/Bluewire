@@ -4,9 +4,7 @@
 	"version": "1.0.1",
 	"name": "蓝色红石线",
 	"description": "把红石粉变成蓝色，并可在配置页面中自由选择颜色！",
-	"authors": [
-		"WalkerTian"
-	],
+	"authors": ["WalkerTian"],
 	"contact": {
 		"homepage": "https://github.com/Walkersifolia/",
 		"sources": "https://github.com/Walkersifolia/Bluewire"
@@ -15,26 +13,15 @@
 	"icon": "assets/bluewire/icon.png",
 	"environment": "*",
 	"entrypoints": {
-		"main": [
-			"com.example.ExampleMod"
-		],
-		"client": [
-			"com.example.ExampleModClient"
-		],
-		"modmenu": [
-			"com.example.config.ModMenuIntegration"
-		]
+		"main": ["com.example.ExampleMod"],
+		"client": ["com.example.ExampleModClient"],
+		"modmenu": ["com.example.config.ModMenuIntegration"]
 	},
-	"mixins": [
-		"bluewire.mixins.json"
-	],
+	"mixins": ["bluewire.mixins.json"],
 	"depends": {
 		"fabricloader": "*",
 		"minecraft": "*",
 		"java": "*",
 		"fabric-api": "*"
-	},
-	"suggests": {
-		"another-mod": "*"
 	}
 }
