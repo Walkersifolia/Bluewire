@@ -4,7 +4,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientChunkEvents;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -16,7 +15,6 @@ import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.chunk.WorldChunk;
 import org.joml.Matrix4f;
-import org.lwjgl.opengl.GL11;
 
 public class RainbowOverlayRenderer {
     private static final LongSet wirePositions = new LongOpenHashSet();
@@ -29,19 +27,6 @@ public class RainbowOverlayRenderer {
         ClientChunkEvents.CHUNK_LOAD.register((world, chunk) -> scanChunk(chunk, true));
         ClientChunkEvents.CHUNK_UNLOAD.register((world, chunk) -> scanChunk(chunk, false));
 
-        ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (client.world == null || client.player == null) return;
-            if (client.world.getTime() % 60 != 0) return;
-            wirePositions.clear();
-            int r = client.options.getViewDistance().getValue();
-            ChunkPos cp = client.player.getChunkPos();
-            for (int cx = cp.x - r; cx <= cp.x + r; cx++)
-                for (int cz = cp.z - r; cz <= cp.z + r; cz++) {
-                    WorldChunk c = client.world.getChunkManager().getWorldChunk(cx, cz);
-                    if (c != null) scanChunk(c, true);
-                }
-        });
-
         WorldRenderEvents.LAST.register(context -> {
             if (!BluewireConfig.getInstance().rainbow) return;
             MinecraftClient client = MinecraftClient.getInstance();
@@ -51,11 +36,9 @@ public class RainbowOverlayRenderer {
             MatrixStack matrices = context.matrixStack();
             int viewDist = client.options.getViewDistance().getValue() * 16;
 
-            RenderSystem.enableBlend();
-            RenderSystem.defaultBlendFunc();
-            RenderSystem.depthFunc(GL11.GL_LEQUAL);
-            RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+            RenderSystem.disableDepthTest();
             RenderSystem.depthMask(false);
+            RenderSystem.setShader(GameRenderer::getPositionColorProgram);
 
             BufferBuilder buffer = Tessellator.getInstance().getBuffer();
             buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
@@ -73,26 +56,26 @@ public class RainbowOverlayRenderer {
                 int power = state.get(net.minecraft.block.RedstoneWireBlock.POWER);
                 int color = BluewireConfig.getWireColor(power);
                 float r = ((color >> 16) & 0xFF) / 255f;
-                float g = ((color >> 8) & 0xFF) / 255f;
-                float b = (color & 0xFF) / 255f;
+                float g = ((color >> 8)  & 0xFF) / 255f;
+                float b = ( color        & 0xFF) / 255f;
 
                 float x = (float)(bx - camPos.x);
-                float y = (float)(by + 0.08 - camPos.y);
+                float y = (float)(by + 0.02 - camPos.y);
                 float z = (float)(bz - camPos.z);
 
                 matrices.push();
                 matrices.translate(x, y, z);
                 Matrix4f mat = matrices.peek().getPositionMatrix();
-                buffer.vertex(mat, 0, 0, 0).color(r, g, b, 0.55f).next();
-                buffer.vertex(mat, 1, 0, 0).color(r, g, b, 0.55f).next();
-                buffer.vertex(mat, 1, 0, 1).color(r, g, b, 0.55f).next();
-                buffer.vertex(mat, 0, 0, 1).color(r, g, b, 0.55f).next();
+                buffer.vertex(mat, 0, 0, 0).color(r, g, b, 1f).next();
+                buffer.vertex(mat, 1, 0, 0).color(r, g, b, 1f).next();
+                buffer.vertex(mat, 1, 0, 1).color(r, g, b, 1f).next();
+                buffer.vertex(mat, 0, 0, 1).color(r, g, b, 1f).next();
                 matrices.pop();
             }
 
             BufferRenderer.drawWithGlobalProgram(buffer.end());
             RenderSystem.depthMask(true);
-            RenderSystem.disableBlend();
+            RenderSystem.enableDepthTest();
         });
     }
 
