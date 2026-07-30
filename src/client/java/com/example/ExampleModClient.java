@@ -1,11 +1,11 @@
 package com.example;
 
-import com.example.config.RainbowAnimator;
+import com.example.config.RainbowOverlayRenderer;
 import net.fabricmc.api.ClientModInitializer;
 
 public class ExampleModClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
-        RainbowAnimator.register();
+        RainbowOverlayRenderer.register();
     }
 }
