@@ -27,6 +27,8 @@ public class BluewireConfig {
     public boolean reverse = false;
     public boolean rainbow = false;
     public float rainbowSpeed = 1.0F;
+    public boolean rainbowDebugMode = false;
+    public boolean rainbowDebugOverlay = false;
 
     private static final Vec3d[] COLORS = new Vec3d[16];
     static { updateColors(); }
@@ -45,9 +47,10 @@ public class BluewireConfig {
     public static int getWireColor(int powerLevel) {
         BluewireConfig config = getInstance();
         if (config.rainbow) {
+            if (config.rainbowDebugOverlay) return 0xFF000000;
             float speed = config.rainbowSpeed <= 0 ? 1.0F : config.rainbowSpeed;
             float hue = (System.currentTimeMillis() / 1000.0F * speed * 360.0F) % 360.0F;
-            hue = (hue + powerLevel * 12.0F) % 360.0F;
+            hue = ((int)hue + powerLevel * 12) % 360.0F;
             return hsvToRgb(hue, 1.0F, 1.0F);
         }
         Vec3d v = COLORS[powerLevel];
@@ -69,12 +72,15 @@ public class BluewireConfig {
         return MathHelper.packRgb(r + m, g + m, b + m);
     }
 
-    public static BluewireConfig getInstance() { if (instance == null) instance = new BluewireConfig(); return instance; }
+    public static BluewireConfig getInstance() {
+        if (instance == null) instance = new BluewireConfig();
+        return instance;
+    }
 
     public static void load() {
         if (CONFIG_FILE.exists()) {
             try (Reader r = new FileReader(CONFIG_FILE)) { instance = GSON.fromJson(r, BluewireConfig.class); }
-            catch (Exception e) { LOGGER.error("配置加载失败，使用默认值", e); instance = new BluewireConfig(); }
+            catch (Exception e) { LOGGER.error("配置加载失败", e); instance = new BluewireConfig(); }
         } else { instance = new BluewireConfig(); instance.save(); }
         if (instance.rainbowSpeed <= 0) instance.rainbowSpeed = 1.0F;
     }
@@ -85,7 +91,9 @@ public class BluewireConfig {
     }
 
     public static int floatRgbToInt(float r, float g, float b) {
-        return (MathHelper.clamp((int)(r*255+0.5f),0,255)<<16)|(MathHelper.clamp((int)(g*255+0.5f),0,255)<<8)|MathHelper.clamp((int)(b*255+0.5f),0,255);
+        return (MathHelper.clamp((int)(r*255+0.5f),0,255)<<16)
+             | (MathHelper.clamp((int)(g*255+0.5f),0,255)<<8)
+             |  MathHelper.clamp((int)(b*255+0.5f),0,255);
     }
 
     public static float[] intToFloatRgb(int c) {
