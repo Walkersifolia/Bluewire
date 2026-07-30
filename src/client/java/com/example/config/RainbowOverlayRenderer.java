@@ -1,6 +1,5 @@
 package com.example.config;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientChunkEvents;
@@ -22,13 +21,12 @@ public class RainbowOverlayRenderer {
     private static final LongSet wirePositions = new LongOpenHashSet();
     private static boolean registered;
     private static boolean scanned;
-    private static int debugFrame;
 
     public static void register() {
         if (registered) return;
         registered = true;
 
-        ClientChunkEvents.CHUNK_LOAD.register((world, chunk) -> scanChunk(chunk, true));
+        ClientChunkEvents.CHUNK_LOAD.register((world, chunk)   -> scanChunk(chunk, true));
         ClientChunkEvents.CHUNK_UNLOAD.register((world, chunk) -> scanChunk(chunk, false));
 
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> scanned = false);
@@ -49,22 +47,21 @@ public class RainbowOverlayRenderer {
             if (!BluewireConfig.getInstance().rainbow) return;
             MinecraftClient client = MinecraftClient.getInstance();
             if (client.world == null || client.player == null) return;
+            if (wirePositions.isEmpty()) return;
 
             Vec3d camPos = context.camera().getPos();
             MatrixStack matrices = context.matrixStack();
             int viewDist = client.options.getViewDistance().getValue() * 16;
 
-            RenderSystem.disableDepthTest();
-            RenderSystem.depthMask(false);
-            RenderSystem.setShader(GameRenderer::getPositionColorProgram);
-
-            BufferBuilder buffer = Tessellator.getInstance().getBuffer();
-            buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+            VertexConsumerProvider.Immediate provider =
+                VertexConsumerProvider.immediate(new BufferBuilder(131072));
+            VertexConsumer vc = provider.getBuffer(RenderLayer.getTranslucent());
 
             for (long packed : wirePositions) {
                 int bx = BlockPos.unpackLongX(packed);
                 int by = BlockPos.unpackLongY(packed);
                 int bz = BlockPos.unpackLongZ(packed);
+
                 if (Math.abs(bx - client.player.getX()) > viewDist ||
                     Math.abs(bz - client.player.getZ()) > viewDist) continue;
 
@@ -78,36 +75,20 @@ public class RainbowOverlayRenderer {
                 float b = ( color        & 0xFF) / 255f;
 
                 float x = (float)(bx - camPos.x);
-                float y = (float)(by + 0.02 - camPos.y);
+                float y = (float)(by + 0.022f - camPos.y);
                 float z = (float)(bz - camPos.z);
 
                 matrices.push();
                 matrices.translate(x, y, z);
                 Matrix4f mat = matrices.peek().getPositionMatrix();
-                buffer.vertex(mat, 0, 0, 0).color(r, g, b, 1f).next();
-                buffer.vertex(mat, 1, 0, 0).color(r, g, b, 1f).next();
-                buffer.vertex(mat, 1, 0, 1).color(r, g, b, 1f).next();
-                buffer.vertex(mat, 0, 0, 1).color(r, g, b, 1f).next();
+                vc.vertex(mat, 0, 0, 0).color(r, g, b, 0.55f).next();
+                vc.vertex(mat, 1, 0, 0).color(r, g, b, 0.55f).next();
+                vc.vertex(mat, 1, 0, 1).color(r, g, b, 0.55f).next();
+                vc.vertex(mat, 0, 0, 1).color(r, g, b, 0.55f).next();
                 matrices.pop();
             }
 
-            BufferRenderer.drawWithGlobalProgram(buffer.end());
-            RenderSystem.depthMask(true);
-            RenderSystem.enableDepthTest();
-
-            debugFrame++;
-            if (debugFrame % 60 == 0 && !wirePositions.isEmpty()) {
-                long first = wirePositions.iterator().nextLong();
-                int bx = BlockPos.unpackLongX(first);
-                int by = BlockPos.unpackLongY(first);
-                int bz = BlockPos.unpackLongZ(first);
-                BlockState st = client.world.getBlockState(new BlockPos(bx, by, bz));
-                if (st.isOf(Blocks.REDSTONE_WIRE)) {
-                    int pw = st.get(net.minecraft.block.RedstoneWireBlock.POWER);
-                    int c = BluewireConfig.getWireColor(pw);
-                    com.example.ExampleMod.LOGGER.info("[ARGB] power={} color=#{} wireCount={}", pw, Integer.toHexString(c), wirePositions.size());
-                }
-            }
+            provider.draw();
         });
     }
 
@@ -121,7 +102,7 @@ public class RainbowOverlayRenderer {
                     BlockPos pos = new BlockPos((cp.x << 4) + bx, by, (cp.z << 4) + bz);
                     if (chunk.getBlockState(pos).isOf(Blocks.REDSTONE_WIRE)) {
                         if (add) wirePositions.add(pos.asLong());
-                        else wirePositions.remove(pos.asLong());
+                        else     wirePositions.remove(pos.asLong());
                     }
                 }
     }
