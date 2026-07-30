@@ -17,7 +17,13 @@
 		"client": ["com.example.ExampleModClient"],
 		"modmenu": ["com.example.config.ModMenuIntegration"]
 	},
-	"mixins": ["bluewire.mixins.json"],
+	"mixins": [
+		"bluewire.mixins.json",
+		{
+			"config": "bluewire.client.mixins.json",
+			"environment": "client"
+		}
+	],
 	"depends": {
 		"fabricloader": "*",
 		"minecraft": "*",

@@ -1,13 +1,14 @@
 package com.example.config;
 
-import com.example.config.BluewireConfig;
+import com.example.mixin.WorldRendererAccessor;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.render.BuiltChunkStorage;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.chunk.WorldChunk;
 
 /**
- * 当 ARGB 渐变模式开启时，周期性将玩家视野内的区块标记为需要重绘，
- * 使每个功率等级的红石线颜色随时间动态变化。
+ * ARGB 渐变驱动：直接通过 BuiltChunkStorage.scheduleRebuild 标记含红石线的区块重建。
  */
 public class RainbowAnimator {
     private static int tickCounter;
@@ -17,21 +18,28 @@ public class RainbowAnimator {
             if (!BluewireConfig.getInstance().rainbow) return;
             if (client.world == null || client.player == null || client.worldRenderer == null) return;
 
-            // 根据速度决定刷新间隔：速度越快，刷新越频繁
-            // 速度 1.0 → 每 4 tick 调度一次（每秒约 5 次）
-            // 速度 5.0 → 每 1 tick 调度一次（每秒 20 次）
             tickCounter++;
             float speed = BluewireConfig.getInstance().rainbowSpeed;
             int interval = Math.max(1, Math.round(4.0F / speed));
             if (tickCounter % interval != 0) return;
 
-            // 将玩家周围所有已加载区块标记为重绘
+            BuiltChunkStorage chunks = ((WorldRendererAccessor) client.worldRenderer).getChunks();
+            if (chunks == null) return;
+
             BlockPos playerPos = client.player.getBlockPos();
-            int radius = client.options.getViewDistance().getValue() * 16;
-            client.worldRenderer.scheduleBlockRenders(
-                playerPos.getX() - radius, playerPos.getY() - 16, playerPos.getZ() - radius,
-                playerPos.getX() + radius, playerPos.getY() + 16, playerPos.getZ() + radius
-            );
+            int r = client.options.getViewDistance().getValue();
+            for (int cx = (playerPos.getX() >> 4) - r; cx <= (playerPos.getX() >> 4) + r; cx++) {
+                for (int cz = (playerPos.getZ() >> 4) - r; cz <= (playerPos.getZ() >> 4) + r; cz++) {
+                    WorldChunk chunk = client.world.getChunkManager().getWorldChunk(cx, cz);
+                    if (chunk == null) continue;
+                    int bottom = client.world.getBottomSectionCoord();
+                    int top = client.world.getTopSectionCoord();
+                    for (int sy = bottom; sy < top && sy * 16 < 64; sy++) {
+                        if (chunk.getSection(chunk.getSectionIndex(sy * 16)) == null) continue;
+                        chunks.scheduleRebuild((cx << 4) + 8, sy * 16 + 8, (cz << 4) + 8, true);
+                    }
+                }
+            }
         });
     }
 }
