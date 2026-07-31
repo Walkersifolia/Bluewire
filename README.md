@@ -14,7 +14,7 @@ Turn your redstone dust into customizable colors!
 
 ## Configuration
 
-Open via Mod Menu → Bluewire settings, or use the `/bluewire` command (if available).
+Open via Mod Menu → Bluewire settings.
 
 - **High Power Color** (signal 15) — default bright blue `#0080FF`
 - **Low Power Color** (signal 0) — default dark blue `#00004D`
