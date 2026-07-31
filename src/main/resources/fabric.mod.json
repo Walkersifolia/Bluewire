@@ -1,7 +1,7 @@
 {
 	"schemaVersion": 1,
 	"id": "bluewire",
-	"version": "1.0.1",
+	"version": "${version}",
 	"name": "蓝色红石线",
 	"description": "把红石粉变成蓝色，并可在配置页面中自由选择颜色！",
 	"authors": ["WalkerTian"],

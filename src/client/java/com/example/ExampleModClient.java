@@ -1,11 +1,15 @@
 package com.example;
 
-import com.example.config.RainbowOverlayRenderer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import net.fabricmc.api.ClientModInitializer;
 
 public class ExampleModClient implements ClientModInitializer {
+    private static final Logger LOGGER = LoggerFactory.getLogger("bluewire");
+
     @Override
     public void onInitializeClient() {
-        RainbowOverlayRenderer.register();
+        LOGGER.info("[BluewireBuild] version=1.0.2");
     }
 }

@@ -25,16 +25,7 @@ public class BluewireConfig {
     public float lowGreen  = 0.0F;
     public float lowBlue   = 0.3F;
     public boolean reverse = false;
-    public boolean rainbow = false;
-    public float rainbowSpeed = 1.0F;
 
-    // ── 诊断开关 ──
-    /** 开启后每约60帧输出一次渲染状态日志 */
-    public boolean rainbowDebugMode = false;
-    /** 开启后在相机前方绘制品红/青色闪烁测试四边形，红石tint置黑 */
-    public boolean rainbowDebugOverlay = false;
-
-    // ── 颜色缓存（静态模式使用，rainbow模式不使用）──
     private static final Vec3d[] COLORS = new Vec3d[16];
     static { updateColors(); }
 
@@ -49,40 +40,9 @@ public class BluewireConfig {
         }
     }
 
-    /**
-     * 每帧/每次调用的动态颜色计算。
-     * 注意：此方法同时被 Mixin（Path A 静态tint）和 Overlay Renderer（Path B 动态覆盖层）调用。
-     * rainbowDebugOverlay 开启时返回纯黑，关闭静态tint便于诊断。
-     */
     public static int getWireColor(int powerLevel) {
-        BluewireConfig config = getInstance();
-        if (config.rainbow) {
-            if (config.rainbowDebugOverlay) {
-                // 诊断模式：静态tint纯黑，只靠Overlay显示
-                return 0xFF000000;
-            }
-            float speed = config.rainbowSpeed <= 0 ? 1.0F : config.rainbowSpeed;
-            float hue = (System.currentTimeMillis() / 1000.0F * speed * 360.0F) % 360.0F;
-            hue = ((int)hue + powerLevel * 12) % 360.0F;
-            return hsvToRgb(hue, 1.0F, 1.0F);
-        }
         Vec3d v = COLORS[powerLevel];
         return MathHelper.packRgb((float)v.getX(), (float)v.getY(), (float)v.getZ());
-    }
-
-    private static int hsvToRgb(float h, float s, float v) {
-        float c = v * s;
-        float hp = h / 60.0F;
-        float x = c * (1.0F - Math.abs(hp % 2.0F - 1.0F));
-        float m = v - c;
-        float r, g, b;
-        if      (hp < 1) { r = c; g = x; b = 0; }
-        else if (hp < 2) { r = x; g = c; b = 0; }
-        else if (hp < 3) { r = 0; g = c; b = x; }
-        else if (hp < 4) { r = 0; g = x; b = c; }
-        else if (hp < 5) { r = x; g = 0; b = c; }
-        else             { r = c; g = 0; b = x; }
-        return MathHelper.packRgb(r + m, g + m, b + m);
     }
 
     public static BluewireConfig getInstance() {
@@ -95,7 +55,6 @@ public class BluewireConfig {
             try (Reader r = new FileReader(CONFIG_FILE)) { instance = GSON.fromJson(r, BluewireConfig.class); }
             catch (Exception e) { LOGGER.error("配置加载失败", e); instance = new BluewireConfig(); }
         } else { instance = new BluewireConfig(); instance.save(); }
-        if (instance.rainbowSpeed <= 0) instance.rainbowSpeed = 1.0F;
     }
 
     public void save() {
