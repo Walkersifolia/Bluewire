@@ -3,7 +3,7 @@
 	"id": "bluewire",
 	"version": "${version}",
 	"name": "蓝色红石线",
-	"description": "把红石粉变成蓝色，并可在配置页面中自由选择颜色！",
+	"description": "自定义红石粉静态颜色，并支持沿线路连续流动的动态 ARGB 渐变。",
 	"authors": ["WalkerTian"],
 	"contact": {
 		"homepage": "https://github.com/Walkersifolia/",
@@ -17,7 +17,13 @@
 		"client": ["com.example.ExampleModClient"],
 		"modmenu": ["com.example.config.ModMenuIntegration"]
 	},
-	"mixins": ["bluewire.mixins.json"],
+	"mixins": [
+		"bluewire.mixins.json",
+		{
+			"config": "bluewire.client.mixins.json",
+			"environment": "client"
+		}
+	],
 	"depends": {
 		"fabricloader": "*",
 		"minecraft": "*",

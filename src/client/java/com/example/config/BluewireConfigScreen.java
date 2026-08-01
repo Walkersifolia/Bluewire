@@ -18,8 +18,9 @@ public class BluewireConfigScreen extends Screen {
 
     private int highRgb, lowRgb;
     private TextFieldWidget highHexField, lowHexField;
-    private CheckboxWidget revBox;
+    private CheckboxWidget revBox, rainbowBox;
     private ButtonWidget highResetBtn, lowResetBtn;
+    private TextFieldWidget speedField;
 
     public BluewireConfigScreen(Screen parent) {
         super(Text.literal("Bluewire 设置"));
@@ -77,6 +78,17 @@ public class BluewireConfigScreen extends Screen {
             Text.literal("反转方向（低功率用高颜色）"), cfg.reverse);
         this.addDrawableChild(revBox);
 
+        y += 36;
+        rainbowBox = new CheckboxWidget(cx - 100, y + 2, 200, 20,
+            Text.literal("启用动态 ARGB"), cfg.rainbow);
+        this.addDrawableChild(rainbowBox);
+
+        y += 28;
+        speedField = hexField(cx - 100, y + 2, 60, String.format("%.1f", cfg.rainbowSpeed));
+        speedField.setMaxLength(4);
+        speedField.setChangedListener(s -> {});
+        this.addDrawableChild(speedField);
+
         int btnY = this.height - 30;
         this.addDrawableChild(ButtonWidget.builder(Text.literal("保存"), btn -> doSave())
             .dimensions(cx - 105, btnY, 100, 20).build());
@@ -121,6 +133,14 @@ public class BluewireConfigScreen extends Screen {
         highRgb = parseHexSafe(highHexField.getText(), highRgb);
         lowRgb  = parseHexSafe(lowHexField.getText(), lowRgb);
         cfg.reverse = revBox.isChecked();
+        cfg.rainbow = rainbowBox != null && rainbowBox.isChecked();
+        if (speedField != null) {
+            try {
+                cfg.rainbowSpeed = Math.max(0.1F, Math.min(5.0F, Float.parseFloat(speedField.getText())));
+            } catch (NumberFormatException e) {
+                cfg.rainbowSpeed = 1.0F;
+            }
+        }
         float[] h = BluewireConfig.intToFloatRgb(highRgb);
         cfg.highRed = h[0]; cfg.highGreen = h[1]; cfg.highBlue = h[2];
         float[] l = BluewireConfig.intToFloatRgb(lowRgb);
@@ -147,6 +167,11 @@ public class BluewireConfigScreen extends Screen {
         ctx.drawTextWithShadow(this.textRenderer, "低功率颜色  (信号强度 0)", left, y, 0xCCCCCC);
         ctx.fill(left, y + 20, left + PREVIEW_W, y + 20 + PREVIEW_H, 0xFF000000 | (lowRgb & 0xFFFFFF));
         ctx.drawTextWithShadow(this.textRenderer, "#", left + PREVIEW_W + 10, y + 22 + 4, 0xAAAAAA);
+
+        y += 48;
+        ctx.drawCenteredTextWithShadow(this.textRenderer, "ARGB 动态渐变", cx, y, 0xAAAAAA);
+        y += 42;
+        ctx.drawTextWithShadow(this.textRenderer, "流速:", cx - 100 + 60 + 6, y + 2 + 4, 0xBBBBBB);
 
         super.render(ctx, mouseX, mouseY, delta);
     }

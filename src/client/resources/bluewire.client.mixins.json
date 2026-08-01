@@ -2,7 +2,9 @@
 	"required": true,
 	"package": "com.example.mixin",
 	"compatibilityLevel": "JAVA_17",
-	"client": [],
+	"client": [
+		"ClientWorldMixin_argb"
+	],
 	"injectors": {
 		"defaultRequire": 1
 	}

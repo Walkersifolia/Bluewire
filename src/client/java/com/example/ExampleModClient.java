@@ -1,15 +1,22 @@
 package com.example;
 
+import com.example.config.DynamicWireRenderer_argb;
+import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.loader.api.FabricLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import net.fabricmc.api.ClientModInitializer;
 
 public class ExampleModClient implements ClientModInitializer {
     private static final Logger LOGGER = LoggerFactory.getLogger("bluewire");
 
     @Override
     public void onInitializeClient() {
-        LOGGER.info("[BluewireBuild] version=1.0.2");
+        String version = FabricLoader.getInstance()
+            .getModContainer("bluewire")
+            .map(container -> container.getMetadata().getVersion().getFriendlyString())
+            .orElse("unknown");
+        LOGGER.info("[BluewireBuild] version={} renderer=vanilla-block-model", version);
+
+        DynamicWireRenderer_argb.register();
     }
 }

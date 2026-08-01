@@ -3,6 +3,9 @@ package com.example.config;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.RedstoneWireBlock;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import org.slf4j.Logger;
@@ -17,6 +20,7 @@ public class BluewireConfig {
         FabricLoader.getInstance().getConfigDir().toFile(), "bluewire.json"
     );
     private static BluewireConfig instance;
+    private static final ThreadLocal<Integer> DYNAMIC_COLOR_OVERRIDE = new ThreadLocal<>();
 
     public float highRed   = 0.0F;
     public float highGreen = 0.5F;
@@ -25,6 +29,8 @@ public class BluewireConfig {
     public float lowGreen  = 0.0F;
     public float lowBlue   = 0.3F;
     public boolean reverse = false;
+    public boolean rainbow = false;
+    public float rainbowSpeed = 1.0F;
 
     private static final Vec3d[] COLORS = new Vec3d[16];
     static { updateColors(); }
@@ -41,8 +47,34 @@ public class BluewireConfig {
     }
 
     public static int getWireColor(int powerLevel) {
+        Integer override = DYNAMIC_COLOR_OVERRIDE.get();
+        if (override != null) return override;
+
+        BluewireConfig config = getInstance();
+        if (config.rainbow) {
+            return 0x888888;
+        }
         Vec3d v = COLORS[powerLevel];
         return MathHelper.packRgb((float)v.getX(), (float)v.getY(), (float)v.getZ());
+    }
+
+    public int getDynamicWireColor(BlockState state, BlockPos pos, double elapsedSeconds) {
+        int power = state.get(RedstoneWireBlock.POWER);
+        float speed = rainbowSpeed <= 0.0F ? 1.0F : rainbowSpeed;
+        double phase = elapsedSeconds * speed
+            + (pos.getX() + pos.getZ()) * 0.025
+            + pos.getY() * 0.04
+            + power / 16.0;
+        float hue = (float)(phase - Math.floor(phase));
+        return MathHelper.hsvToRgb(hue, 1.0F, 1.0F);
+    }
+
+    public static void setDynamicColorOverride(int color) {
+        DYNAMIC_COLOR_OVERRIDE.set(color);
+    }
+
+    public static void clearDynamicColorOverride() {
+        DYNAMIC_COLOR_OVERRIDE.remove();
     }
 
     public static BluewireConfig getInstance() {
@@ -55,6 +87,7 @@ public class BluewireConfig {
             try (Reader r = new FileReader(CONFIG_FILE)) { instance = GSON.fromJson(r, BluewireConfig.class); }
             catch (Exception e) { LOGGER.error("配置加载失败", e); instance = new BluewireConfig(); }
         } else { instance = new BluewireConfig(); instance.save(); }
+        if (instance.rainbowSpeed <= 0) instance.rainbowSpeed = 1.0F;
     }
 
     public void save() {
