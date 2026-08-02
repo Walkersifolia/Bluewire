@@ -1,4 +1,4 @@
-package com.example.config;
+package com.bluewire.config;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;

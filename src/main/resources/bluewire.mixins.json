@@ -1,7 +1,7 @@
 {
 	"required": true,
-	"package": "com.example.mixin",
+	"package": "com.bluewire.mixin",
 	"compatibilityLevel": "JAVA_17",
-	"mixins": ["ExampleMixin"],
+	"mixins": ["RedstoneWireMixin"],
 	"injectors": {"defaultRequire": 1}
 }

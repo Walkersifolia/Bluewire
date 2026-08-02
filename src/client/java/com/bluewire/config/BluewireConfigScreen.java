@@ -1,4 +1,4 @@
-package com.example.config;
+package com.bluewire.config;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -13,14 +13,20 @@ public class BluewireConfigScreen extends Screen {
     private static final int HIGH_DEFAULT = 0x0080FF;
     private static final int LOW_DEFAULT  = 0x00004D;
 
+    private static final int TAB_STATIC = 0;
+    private static final int TAB_ARGB   = 1;
+
     private final Screen parent;
     private final BluewireConfig cfg;
+
+    private int activeTab = TAB_STATIC;
 
     private int highRgb, lowRgb;
     private TextFieldWidget highHexField, lowHexField;
     private CheckboxWidget revBox, rainbowBox;
     private ButtonWidget highResetBtn, lowResetBtn;
     private TextFieldWidget speedField;
+    private ButtonWidget tabStaticBtn, tabArgbBtn;
 
     public BluewireConfigScreen(Screen parent) {
         super(Text.literal("Bluewire 设置"));
@@ -33,8 +39,30 @@ public class BluewireConfigScreen extends Screen {
     @Override
     protected void init() {
         int cx = this.width / 2;
+
+        int tabW = 100;
+        int tabH = 20;
+        int tabY = 28;
+        tabStaticBtn = ButtonWidget.builder(Text.literal("静态变色"), btn -> switchTab(TAB_STATIC))
+            .dimensions(cx - tabW - 4, tabY, tabW, tabH).build();
+        tabArgbBtn = ButtonWidget.builder(Text.literal("ARGB 动态渐变"), btn -> switchTab(TAB_ARGB))
+            .dimensions(cx + 4, tabY, tabW, tabH).build();
+        this.addDrawableChild(tabStaticBtn);
+        this.addDrawableChild(tabArgbBtn);
+
+        if (activeTab == TAB_STATIC) buildStaticTab(cx);
+        else buildArgbTab(cx);
+
+        int btnY = this.height - 30;
+        this.addDrawableChild(ButtonWidget.builder(Text.literal("保存"), btn -> doSave())
+            .dimensions(cx - 105, btnY, 100, 20).build());
+        this.addDrawableChild(ButtonWidget.builder(Text.literal("完成"), btn -> { doSave(); close(); })
+            .dimensions(cx + 5, btnY, 100, 20).build());
+    }
+
+    private void buildStaticTab(int cx) {
         int left = cx - 120;
-        int y = 42;
+        int y = 54;
 
         highHexField = hexField(left + PREVIEW_W + 18, y + 22, 70, toHex6(highRgb));
         highHexField.setChangedListener(s -> onHexChanged(true));
@@ -78,26 +106,38 @@ public class BluewireConfigScreen extends Screen {
             Text.literal("反转方向（低功率用高颜色）"), cfg.reverse);
         this.addDrawableChild(revBox);
 
-        y += 36;
-        rainbowBox = new CheckboxWidget(cx - 100, y + 2, 200, 20,
-            Text.literal("启用动态 ARGB"), cfg.rainbow);
-        this.addDrawableChild(rainbowBox);
-
-        y += 28;
-        speedField = hexField(cx - 100, y + 2, 60, String.format("%.1f", cfg.rainbowSpeed));
-        speedField.setMaxLength(4);
-        speedField.setChangedListener(s -> {});
-        this.addDrawableChild(speedField);
-
-        int btnY = this.height - 30;
-        this.addDrawableChild(ButtonWidget.builder(Text.literal("保存"), btn -> doSave())
-            .dimensions(cx - 105, btnY, 100, 20).build());
-        this.addDrawableChild(ButtonWidget.builder(Text.literal("完成"), btn -> { doSave(); close(); })
-            .dimensions(cx + 5, btnY, 100, 20).build());
-
         updateResetButtons();
         validateHex(highHexField);
         validateHex(lowHexField);
+    }
+
+    private void buildArgbTab(int cx) {
+        int left = cx - 100;
+        int y = 62;
+
+        rainbowBox = new CheckboxWidget(left, y, 200, 20,
+            Text.literal("启用动态 ARGB"), cfg.rainbow);
+        this.addDrawableChild(rainbowBox);
+
+        y += 34;
+        speedField = hexField(left, y, 60, String.format("%.1f", cfg.rainbowSpeed));
+        speedField.setMaxLength(4);
+        speedField.setChangedListener(s -> {});
+        this.addDrawableChild(speedField);
+    }
+
+    private void switchTab(int tab) {
+        if (this.activeTab == tab) return;
+        this.activeTab = tab;
+        highHexField = null;
+        lowHexField = null;
+        highResetBtn = null;
+        lowResetBtn = null;
+        revBox = null;
+        rainbowBox = null;
+        speedField = null;
+        this.clearChildren();
+        this.init();
     }
 
     private void rebuild(boolean fromFieldChange) {
@@ -130,9 +170,11 @@ public class BluewireConfigScreen extends Screen {
     }
 
     private void doSave() {
-        highRgb = parseHexSafe(highHexField.getText(), highRgb);
-        lowRgb  = parseHexSafe(lowHexField.getText(), lowRgb);
-        cfg.reverse = revBox.isChecked();
+        if (highHexField != null) {
+            highRgb = parseHexSafe(highHexField.getText(), highRgb);
+            lowRgb  = parseHexSafe(lowHexField.getText(), lowRgb);
+        }
+        cfg.reverse = revBox != null && revBox.isChecked();
         cfg.rainbow = rainbowBox != null && rainbowBox.isChecked();
         if (speedField != null) {
             try {
@@ -157,21 +199,27 @@ public class BluewireConfigScreen extends Screen {
         ctx.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 12, 0xFFAAAAFF);
 
         int cx = this.width / 2;
-        int left = cx - 120;
-        int y = 36;
-        ctx.drawTextWithShadow(this.textRenderer, "高功率颜色 (信号强度 15)", left, y, 0xCCCCCC);
-        ctx.fill(left, y + 20, left + PREVIEW_W, y + 20 + PREVIEW_H, 0xFF000000 | (highRgb & 0xFFFFFF));
-        ctx.drawTextWithShadow(this.textRenderer, "#", left + PREVIEW_W + 10, y + 22 + 4, 0xAAAAAA);
 
-        y += 54;
-        ctx.drawTextWithShadow(this.textRenderer, "低功率颜色  (信号强度 0)", left, y, 0xCCCCCC);
-        ctx.fill(left, y + 20, left + PREVIEW_W, y + 20 + PREVIEW_H, 0xFF000000 | (lowRgb & 0xFFFFFF));
-        ctx.drawTextWithShadow(this.textRenderer, "#", left + PREVIEW_W + 10, y + 22 + 4, 0xAAAAAA);
+        int tabW = 100;
+        tabStaticBtn.active = activeTab != TAB_STATIC;
+        tabArgbBtn.active = activeTab != TAB_ARGB;
 
-        y += 48;
-        ctx.drawCenteredTextWithShadow(this.textRenderer, "ARGB 动态渐变", cx, y, 0xAAAAAA);
-        y += 42;
-        ctx.drawTextWithShadow(this.textRenderer, "流速:", cx - 100 + 60 + 6, y + 2 + 4, 0xBBBBBB);
+        if (activeTab == TAB_STATIC) {
+            int left = cx - 120;
+            int y = 50;
+            ctx.drawTextWithShadow(this.textRenderer, "高功率颜色 (信号强度 15)", left, y, 0xCCCCCC);
+            ctx.fill(left, y + 20, left + PREVIEW_W, y + 20 + PREVIEW_H, 0xFF000000 | (highRgb & 0xFFFFFF));
+            ctx.drawTextWithShadow(this.textRenderer, "#", left + PREVIEW_W + 10, y + 22 + 4, 0xAAAAAA);
+
+            y += 54;
+            ctx.drawTextWithShadow(this.textRenderer, "低功率颜色  (信号强度 0)", left, y, 0xCCCCCC);
+            ctx.fill(left, y + 20, left + PREVIEW_W, y + 20 + PREVIEW_H, 0xFF000000 | (lowRgb & 0xFFFFFF));
+            ctx.drawTextWithShadow(this.textRenderer, "#", left + PREVIEW_W + 10, y + 22 + 4, 0xAAAAAA);
+        } else {
+            int left = cx - 100;
+            int y = 96;
+            ctx.drawTextWithShadow(this.textRenderer, "流速:", left + 64, y + 4, 0xBBBBBB);
+        }
 
         super.render(ctx, mouseX, mouseY, delta);
     }

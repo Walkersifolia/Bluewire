@@ -1,4 +1,4 @@
-package com.example.config;
+package com.bluewire.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

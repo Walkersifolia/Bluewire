@@ -1,4 +1,4 @@
-package com.example.config;
+package com.bluewire.config;
 
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;

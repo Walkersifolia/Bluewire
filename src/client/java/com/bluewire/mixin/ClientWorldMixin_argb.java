@@ -1,6 +1,6 @@
-package com.example.mixin;
+package com.bluewire.mixin;
 
-import com.example.config.DynamicWireRenderer_argb;
+import com.bluewire.config.DynamicWireRenderer_argb;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.math.BlockPos;

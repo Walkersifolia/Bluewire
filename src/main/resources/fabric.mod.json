@@ -13,9 +13,9 @@
 	"icon": "assets/bluewire/icon.png",
 	"environment": "*",
 	"entrypoints": {
-		"main": ["com.example.ExampleMod"],
-		"client": ["com.example.ExampleModClient"],
-		"modmenu": ["com.example.config.ModMenuIntegration"]
+		"main": ["com.bluewire.BluewireMod"],
+		"client": ["com.bluewire.BluewireModClient"],
+		"modmenu": ["com.bluewire.config.ModMenuIntegration"]
 	},
 	"mixins": [
 		"bluewire.mixins.json",

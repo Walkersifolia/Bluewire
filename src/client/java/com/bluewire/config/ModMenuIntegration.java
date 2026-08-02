@@ -1,4 +1,4 @@
-package com.example.config;
+package com.bluewire.config;
 
 import com.terraformersmc.modmenu.api.ConfigScreenFactory;
 import com.terraformersmc.modmenu.api.ModMenuApi;

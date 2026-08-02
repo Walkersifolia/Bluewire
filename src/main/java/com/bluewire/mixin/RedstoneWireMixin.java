@@ -1,12 +1,12 @@
-package com.example.mixin;
+package com.bluewire.mixin;
 
-import com.example.config.BluewireConfig;
+import com.bluewire.config.BluewireConfig;
 import net.minecraft.block.RedstoneWireBlock;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 
 @Mixin(RedstoneWireBlock.class)
-public class ExampleMixin {
+public class RedstoneWireMixin {
     /**
      * @param powerLevel 红石信号强度 (0-15)
      * @return 该功率等级对应的 RGB 颜色值

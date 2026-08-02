@@ -1,12 +1,12 @@
-package com.example;
+package com.bluewire;
 
-import com.example.config.DynamicWireRenderer_argb;
+import com.bluewire.config.DynamicWireRenderer_argb;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ExampleModClient implements ClientModInitializer {
+public class BluewireModClient implements ClientModInitializer {
     private static final Logger LOGGER = LoggerFactory.getLogger("bluewire");
 
     @Override
